@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin — Task Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="navbar">
+            <h1>Panel Admin &middot; <span id="admin-name">Admin</span></h1>
+            <div class="nav-right">
+                <button class="btn-secondary btn-sm" onclick="window.location.href='dashboard.html'">Workspace
+                    Saya</button>
+                <button class="btn-danger btn-sm" onclick="logout()">Keluar</button>
+            </div>
+        </header>
+
+        <!-- Manajemen Pengguna -->
+        <div class="card">
+            <h3 style="margin-bottom: 14px;">Manajemen Pengguna</h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nama</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Seluruh Tugas Lintas Pengguna -->
+        <div class="card">
+            <h3 style="margin-bottom: 14px;">Semua Tugas Pengguna</h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Pemilik</th>
+                            <th>Judul Tugas</th>
+                            <th>Kategori</th>
+                            <th>Prioritas</th>
+                            <th>Status</th>
+                            <th>Deadline</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-tasks-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8080/api/v1";
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+
+        // Route Guard khusus ADMIN
+        if (!token) window.location.href = "index.html";
+        if (role !== "ADMIN") window.location.href = "dashboard.html";
+        document.getElementById("admin-name").innerText = localStorage.getItem("userName") || "Admin";
+
+        function authHeaders() {
+            return { "Content-Type": "application/json", "Authorization": "Bearer " + token };
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "index.html";
+        }
+
+        async function loadUsers() {
+            const res = await fetch(`${API_URL}/admin/users`, { headers: authHeaders() });
+            if (res.status === 401 || res.status === 403) return logout();
+            const json = await res.json();
+            const users = json.data || [];
+            const tbody = document.getElementById("users-table-body");
+            tbody.innerHTML = "";
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 24px;">Belum ada pengguna.</td></tr>';
+                return;
+            }
+
+            users.forEach(u => {
+                const nextRole = u.role === "ADMIN" ? "USER" : "ADMIN";
+                const nextStatus = !u.is_active;
+                tbody.innerHTML += `
+          <tr>
+            <td style="color: #64748b;">#${u.id}</td>
+            <td style="font-weight: 500;">${u.name}</td>
+            <td style="color: #64748b;">${u.email}</td>
+            <td><span class="badge ${u.role === "ADMIN" ? "badge-MEDIUM" : "badge-TODO"}">${u.role}</span></td>
+            <td>${u.is_active ? '<span class="badge badge-DONE">Aktif</span>' : '<span class="badge badge-HIGH">Nonaktif</span>'}</td>
+            <td>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn-secondary btn-sm" onclick="changeRole(${u.id}, '${nextRole}')">Ubah ke ${nextRole}</button>
+                <button class="${u.is_active ? "btn-danger" : "btn-secondary"} btn-sm" onclick="toggleStatus(${u.id}, ${nextStatus})">${u.is_active ? "Nonaktifkan" : "Aktifkan"}</button>
+              </div>
+            </td>
+          </tr>`;
+            });
+        }
+
+        async function changeRole(id, newRole) {
+            const res = await fetch(`${API_URL}/admin/users/${id}/role`, {
+                method: "PATCH", headers: authHeaders(), body: JSON.stringify({ role: newRole })
+            });
+            const json = await res.json();
+            if (!res.ok) alert(json.message || "Gagal mengubah role.");
+            loadUsers();
+        }
+
+        async function toggleStatus(id, is_active) {
+            const res = await fetch(`${API_URL}/admin/users/${id}/status`, {
+                method: "PATCH", headers: authHeaders(), body: JSON.stringify({ is_active })
+            });
+            const json = await res.json();
+            if (!res.ok) alert(json.message || "Gagal mengubah status akun.");
+            loadUsers();
+        }
+
+        async function loadAllTasks() {
+            const res = await fetch(`${API_URL}/admin/tasks`, { headers: authHeaders() });
+            const json = await res.json();
+            const tasks = Array.isArray(json.data) ? json.data : (json.data?.items || []);
+            const tbody = document.getElementById("admin-tasks-body");
+            tbody.innerHTML = "";
+
+            if (tasks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 24px;">Belum ada tugas dari pengguna mana pun.</td></tr>';
+                return;
+            }
+
+            tasks.forEach(t => {
+                tbody.innerHTML += `
+          <tr>
+            <td style="color: #64748b;">#${t.id}</td>
+            <td>${t.user_name || "User #" + t.user_id}</td>
+            <td style="font-weight: 500;">${t.title}</td>
+            <td>${t.category_name || "-"}</td>
+            <td><span class="badge badge-${t.priority}">${t.priority}</span></td>
+            <td><span class="badge badge-${t.status}">${t.status}</span></td>
+            <td style="white-space: nowrap; color: #64748b;">${(t.due_date || "").slice(0, 10)}</td>
+          </tr>`;
+            });
+        }
+
+        loadUsers();
+        loadAllTasks();
+    </script>
+</body>
+
+</html>

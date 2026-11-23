@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masuk — Task Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="auth-container">
+        <h2 id="form-title">Masuk ke Akun</h2>
+        <div id="alert-box" class="alert"></div>
+
+        <!-- Form Login -->
+        <form id="login-form">
+            <div class="form-group">
+                <label for="login-email">Email</label>
+                <input type="email" id="login-email" placeholder="nama@email.com" required>
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <input type="password" id="login-password" placeholder="Masukkan password" required>
+            </div>
+            <button type="submit">Masuk</button>
+            <p class="toggle-link" onclick="toggleMode('register')">Belum punya akun? Daftar sekarang</p>
+        </form>
+
+        <!-- Form Register -->
+        <form id="register-form" style="display: none;">
+            <div class="form-group">
+                <label for="reg-name">Nama Lengkap</label>
+                <input type="text" id="reg-name" placeholder="Nama lengkap" required>
+            </div>
+            <div class="form-group">
+                <label for="reg-email">Email</label>
+                <input type="email" id="reg-email" placeholder="nama@email.com" required>
+            </div>
+            <div class="form-group">
+                <label for="reg-password">Password</label>
+                <input type="password" id="reg-password" placeholder="Minimal 6 karakter" minlength="6" required>
+            </div>
+            <button type="submit">Buat Akun</button>
+            <p class="toggle-link" onclick="toggleMode('login')">Sudah punya akun? Masuk di sini</p>
+        </form>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8080/api/v1";
+
+        // Route Guard: Redirect jika sudah login
+        const existingToken = localStorage.getItem("token");
+        const existingRole = localStorage.getItem("role");
+        if (existingToken) {
+            window.location.href = existingRole === "ADMIN" ? "admin.html" : "dashboard.html";
+        }
+
+        function toggleMode(mode) {
+            document.getElementById("alert-box").className = "alert";
+            const isRegister = mode === "register";
+            document.getElementById("login-form").style.display = isRegister ? "none" : "block";
+            document.getElementById("register-form").style.display = isRegister ? "block" : "none";
+            document.getElementById("form-title").innerText = isRegister ? "Daftar Akun Baru" : "Masuk ke Akun";
+        }
+
+        function showAlert(msg, type) {
+            const box = document.getElementById("alert-box");
+            box.innerText = msg;
+            box.className = "alert " + type;
+        }
+
+        // Submit Login
+        document.getElementById("login-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const email = document.getElementById("login-email").value.trim();
+            const password = document.getElementById("login-password").value;
+
+            try {
+                const res = await fetch(`${API_URL}/auth/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (!res.ok) return showAlert(data.message || "Email atau password salah.", "error");
+
+                localStorage.setItem("token", data.data.token);
+                localStorage.setItem("role", data.data.user.role);
+                localStorage.setItem("userName", data.data.user.name);
+
+                window.location.href = data.data.user.role === "ADMIN" ? "admin.html" : "dashboard.html";
+            } catch (err) {
+                showAlert("Tidak dapat terhubung ke server backend.", "error");
+            }
+        });
+
+        // Submit Register
+        document.getElementById("register-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const name = document.getElementById("reg-name").value.trim();
+            const email = document.getElementById("reg-email").value.trim();
+            const password = document.getElementById("reg-password").value;
+
+            try {
+                const res = await fetch(`${API_URL}/auth/register`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, email, password })
+                });
+                const data = await res.json();
+
+                if (!res.ok) return showAlert(data.message || "Registrasi gagal.", "error");
+
+                document.getElementById("register-form").reset();
+                toggleMode("login");
+                showAlert("Akun berhasil dibuat. Silakan masuk.", "success");
+            } catch (err) {
+                showAlert("Tidak dapat terhubung ke server backend.", "error");
+            }
+        });
+    </script>
+</body>
+
+</html>

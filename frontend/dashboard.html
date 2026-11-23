@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — Task Management</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="navbar">
+            <h1>Workspace &middot; <span id="user-greeting">User</span></h1>
+            <div class="nav-right">
+                <button id="btn-admin-panel" class="btn-secondary btn-sm" style="display: none;"
+                    onclick="window.location.href='admin.html'">Panel Admin</button>
+                <button class="btn-danger btn-sm" onclick="logout()">Keluar</button>
+            </div>
+        </header>
+
+        <!-- Ringkasan Tugas -->
+        <section class="summary-grid">
+            <div class="card stat-card">
+                <h3>Total Tugas</h3>
+                <p id="sum-total">0</p>
+            </div>
+            <div class="card stat-card">
+                <h3>To Do</h3>
+                <p id="sum-todo">0</p>
+            </div>
+            <div class="card stat-card">
+                <h3>In Progress</h3>
+                <p id="sum-progress">0</p>
+            </div>
+            <div class="card stat-card">
+                <h3>Done</h3>
+                <p id="sum-done">0</p>
+            </div>
+        </section>
+
+        <div class="grid-2">
+            <!-- Sidebar Kiri: Kategori & Form Tugas -->
+            <div>
+                <div class="card">
+                    <h3 style="margin-bottom: 14px;">Kategori</h3>
+                    <form id="category-form" style="display: flex; gap: 8px; margin-bottom: 14px;">
+                        <input type="text" id="cat-name" placeholder="Kategori baru..." required>
+                        <button type="submit">Tambah</button>
+                    </form>
+                    <ul id="category-list" style="list-style: none;"></ul>
+                </div>
+
+                <div class="card">
+                    <h3 id="task-form-heading" style="margin-bottom: 14px;">Tugas Baru</h3>
+                    <form id="task-form">
+                        <input type="hidden" id="edit-task-id">
+                        <div class="form-group">
+                            <label for="task-category">Kategori</label>
+                            <select id="task-category" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-title">Judul Tugas</label>
+                            <input type="text" id="task-title" placeholder="Apa yang perlu dikerjakan?" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-desc">Deskripsi</label>
+                            <textarea id="task-desc" rows="2" placeholder="Catatan tambahan (opsional)"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-priority">Prioritas</label>
+                            <select id="task-priority">
+                                <option value="LOW">Low</option>
+                                <option value="MEDIUM" selected>Medium</option>
+                                <option value="HIGH">High</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="task-due">Tenggat Waktu</label>
+                            <input type="date" id="task-due" required>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="submit" id="btn-save-task" style="flex: 1;">Simpan Tugas</button>
+                            <button type="button" id="btn-cancel-edit" class="btn-secondary" style="display: none;"
+                                onclick="resetTaskForm()">Batal</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Area Utama Kanan: Daftar Tugas -->
+            <div class="card">
+                <h3 style="margin-bottom: 14px;">Daftar Tugas</h3>
+
+                <!-- Search, Filter & Sorting -->
+                <div class="filter-bar">
+                    <input type="text" id="filter-search" placeholder="Cari judul tugas..."
+                        oninput="resetPageAndLoad()">
+                    <select id="filter-status" onchange="resetPageAndLoad()">
+                        <option value="">Semua Status</option>
+                        <option value="TODO">To Do</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="DONE">Done</option>
+                    </select>
+                    <select id="filter-priority" onchange="resetPageAndLoad()">
+                        <option value="">Semua Prioritas</option>
+                        <option value="HIGH">High</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LOW">Low</option>
+                    </select>
+                    <select id="filter-sort" onchange="resetPageAndLoad()">
+                        <option value="created_at:desc">Urut: Terbaru</option>
+                        <option value="due_date:asc">Deadline Terdekat</option>
+                        <option value="due_date:desc">Deadline Terjauh</option>
+                        <option value="priority:desc">Prioritas Tertinggi</option>
+                    </select>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tugas</th>
+                                <th>Kategori</th>
+                                <th>Prioritas</th>
+                                <th>Status</th>
+                                <th>Deadline</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="task-table-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Controls -->
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
+                    <span id="page-info" style="font-size: 13px; color: #64748b;">Halaman 1</span>
+                    <div style="display: flex; gap: 6px;">
+                        <button id="btn-prev" class="btn-secondary btn-sm" onclick="changePage(-1)">Sebelumnya</button>
+                        <button id="btn-next" class="btn-secondary btn-sm" onclick="changePage(1)">Berikutnya</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8080/api/v1";
+        const token = localStorage.getItem("token");
+        const role = localStorage.getItem("role");
+
+        // Route Guard
+        if (!token) window.location.href = "index.html";
+        document.getElementById("user-greeting").innerText = localStorage.getItem("userName") || "User";
+        if (role === "ADMIN") document.getElementById("btn-admin-panel").style.display = "inline-block";
+
+        let allTasksCache = [];
+        let currentPage = 1;
+        const pageLimit = 5;
+
+        function authHeaders() {
+            return { "Content-Type": "application/json", "Authorization": "Bearer " + token };
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = "index.html";
+        }
+
+        // Verifikasi profil & status is_active ke /auth/me
+        async function verifySession() {
+            try {
+                const res = await fetch(`${API_URL}/auth/me`, { headers: authHeaders() });
+                if (!res.ok) return logout();
+                const json = await res.json();
+                if (json.data) {
+                    if (json.data.is_active === false) return logout();
+                    document.getElementById("user-greeting").innerText = json.data.name;
+                    localStorage.setItem("userName", json.data.name);
+                }
+            } catch (err) {
+                console.error("Gagal verifikasi sesi:", err);
+            }
+        }
+
+        async function loadSummary() {
+            const res = await fetch(`${API_URL}/tasks/summary`, { headers: authHeaders() });
+            if (res.status === 401) return logout();
+            const json = await res.json();
+            const d = json.data || {};
+            document.getElementById("sum-total").innerText = d.total ?? 0;
+            document.getElementById("sum-todo").innerText = d.todo ?? 0;
+            document.getElementById("sum-progress").innerText = d.in_progress ?? 0;
+            document.getElementById("sum-done").innerText = d.done ?? 0;
+        }
+
+        async function loadCategories() {
+            const res = await fetch(`${API_URL}/categories`, { headers: authHeaders() });
+            const json = await res.json();
+            const list = json.data || [];
+            const ul = document.getElementById("category-list");
+            const select = document.getElementById("task-category");
+
+            ul.innerHTML = "";
+            select.innerHTML = '<option value="">Pilih kategori</option>';
+
+            if (list.length === 0) {
+                ul.innerHTML = '<li style="font-size: 13px; color: #64748b;">Belum ada kategori.</li>';
+                return;
+            }
+
+            list.forEach(cat => {
+                ul.innerHTML += `
+          <li style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13.5px;">
+            <span>${cat.name}</span>
+            <button class="btn-danger btn-sm" onclick="deleteCategory(${cat.id})">Hapus</button>
+          </li>`;
+                select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+            });
+        }
+
+        document.getElementById("category-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const name = document.getElementById("cat-name").value.trim();
+            const res = await fetch(`${API_URL}/categories`, {
+                method: "POST", headers: authHeaders(), body: JSON.stringify({ name })
+            });
+            if (res.ok) {
+                document.getElementById("cat-name").value = "";
+                loadCategories();
+            } else {
+                const err = await res.json();
+                alert(err.message || "Gagal menambah kategori.");
+            }
+        });
+
+        async function deleteCategory(id) {
+            if (!confirm("Hapus kategori ini?")) return;
+            const res = await fetch(`${API_URL}/categories/${id}`, { method: "DELETE", headers: authHeaders() });
+            if (res.ok) loadCategories();
+            else alert("Kategori masih digunakan oleh tugas.");
+        }
+
+        function resetPageAndLoad() {
+            currentPage = 1;
+            loadTasks();
+        }
+
+        function changePage(delta) {
+            const next = currentPage + delta;
+            if (next < 1) return;
+            currentPage = next;
+            loadTasks();
+        }
+
+        async function loadTasks() {
+            const search = document.getElementById("filter-search").value.trim();
+            const status = document.getElementById("filter-status").value;
+            const priority = document.getElementById("filter-priority").value;
+            const [sortBy, order] = document.getElementById("filter-sort").value.split(":");
+
+            const params = new URLSearchParams();
+            if (search) params.append("search", search);
+            if (status) params.append("status", status);
+            if (priority) params.append("priority", priority);
+            if (sortBy) params.append("sort_by", sortBy);
+            if (order) params.append("order", order);
+            params.append("page", currentPage);
+            params.append("limit", pageLimit);
+
+            const res = await fetch(`${API_URL}/tasks?${params.toString()}`, { headers: authHeaders() });
+            const json = await res.json();
+
+            // Dukung respons array langsung maupun objek pagination { items, total_pages, page }
+            const rawData = json.data;
+            const tasks = Array.isArray(rawData) ? rawData : (rawData?.items || rawData?.tasks || []);
+            const totalPages = rawData?.total_pages || rawData?.meta?.total_pages || null;
+
+            allTasksCache = tasks;
+
+            const tbody = document.getElementById("task-table-body");
+            tbody.innerHTML = "";
+
+            document.getElementById("page-info").innerText = totalPages
+                ? `Halaman ${currentPage} dari ${totalPages}`
+                : `Halaman ${currentPage}`;
+
+            document.getElementById("btn-prev").disabled = currentPage <= 1;
+            document.getElementById("btn-next").disabled = totalPages
+                ? currentPage >= totalPages
+                : tasks.length < pageLimit;
+
+            if (tasks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 24px;">Tidak ada tugas ditemukan.</td></tr>';
+                return;
+            }
+
+            tasks.forEach(t => {
+                tbody.innerHTML += `
+          <tr>
+            <td>
+              <div style="font-weight: 500;">${t.title}</div>
+              ${t.description ? `<div style="font-size: 12px; color: #64748b; margin-top: 2px;">${t.description}</div>` : ""}
+            </td>
+            <td>${t.category_name || "-"}</td>
+            <td><span class="badge badge-${t.priority}">${t.priority}</span></td>
+            <td>
+              <select onchange="updateTaskStatus(${t.id}, this.value)" style="padding: 4px 8px; font-size: 12px; width: auto;">
+                <option value="TODO" ${t.status === "TODO" ? "selected" : ""}>TODO</option>
+                <option value="IN_PROGRESS" ${t.status === "IN_PROGRESS" ? "selected" : ""}>IN_PROGRESS</option>
+                <option value="DONE" ${t.status === "DONE" ? "selected" : ""}>DONE</option>
+              </select>
+            </td>
+            <td style="white-space: nowrap; color: #64748b;">${(t.due_date || "").slice(0, 10)}</td>
+            <td style="white-space: nowrap;">
+              <div style="display: flex; gap: 6px;">
+                <button class="btn-secondary btn-sm" onclick="startEditTask(${t.id})">Edit</button>
+                <button class="btn-danger btn-sm" onclick="deleteTask(${t.id})">Hapus</button>
+              </div>
+            </td>
+          </tr>`;
+            });
+        }
+
+        function startEditTask(id) {
+            const task = allTasksCache.find(item => item.id === id);
+            if (!task) return;
+            document.getElementById("edit-task-id").value = task.id;
+            document.getElementById("task-category").value = task.category_id;
+            document.getElementById("task-title").value = task.title;
+            document.getElementById("task-desc").value = task.description || "";
+            document.getElementById("task-priority").value = task.priority;
+            document.getElementById("task-due").value = (task.due_date || "").slice(0, 10);
+
+            document.getElementById("task-form-heading").innerText = "Edit Tugas";
+            document.getElementById("btn-save-task").innerText = "Perbarui";
+            document.getElementById("btn-cancel-edit").style.display = "inline-block";
+        }
+
+        function resetTaskForm() {
+            document.getElementById("task-form").reset();
+            document.getElementById("edit-task-id").value = "";
+            document.getElementById("task-form-heading").innerText = "Tugas Baru";
+            document.getElementById("btn-save-task").innerText = "Simpan Tugas";
+            document.getElementById("btn-cancel-edit").style.display = "none";
+        }
+
+        document.getElementById("task-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const editId = document.getElementById("edit-task-id").value;
+            const existingTask = editId ? allTasksCache.find(item => item.id === Number(editId)) : null;
+
+            const payload = {
+                category_id: Number(document.getElementById("task-category").value),
+                title: document.getElementById("task-title").value.trim(),
+                description: document.getElementById("task-desc").value.trim(),
+                priority: document.getElementById("task-priority").value,
+                status: existingTask ? existingTask.status : "TODO",
+                due_date: document.getElementById("task-due").value
+            };
+
+            const url = editId ? `${API_URL}/tasks/${editId}` : `${API_URL}/tasks`;
+            const method = editId ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method, headers: authHeaders(), body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                resetTaskForm();
+                loadTasks();
+                loadSummary();
+            } else {
+                const err = await res.json();
+                alert(err.message || "Gagal menyimpan tugas.");
+            }
+        });
+
+        async function updateTaskStatus(id, status) {
+            await fetch(`${API_URL}/tasks/${id}/status`, {
+                method: "PATCH", headers: authHeaders(), body: JSON.stringify({ status })
+            });
+            loadSummary();
+        }
+
+        async function deleteTask(id) {
+            if (!confirm("Hapus tugas ini?")) return;
+            await fetch(`${API_URL}/tasks/${id}`, { method: "DELETE", headers: authHeaders() });
+            loadTasks();
+            loadSummary();
+        }
+
+        verifySession();
+        loadSummary();
+        loadCategories();
+        loadTasks();
+    </script>
+</body>
+
+</html>  
