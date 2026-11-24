@@ -9,12 +9,22 @@
 </head>
 
 <body>
-    <div class="container">
+    <!-- Tampilan Khusus 403 Forbidden jika Admin membuka halaman User -->
+    <div id="forbidden-screen" class="auth-container" style="display: none; text-align: center;">
+        
+        <h2 style="margin-bottom: 10px;">Tidak Punya Akses</h2>
+        <p style="font-size: 13.5px; color: #64748b; margin-bottom: 22px;">
+            Halaman Workspace ini hanya diperuntukkan bagi pengguna (USER). Sebagai Administrator, silakan kelola sistem
+            melalui Panel Admin.
+        </p>
+        <button onclick="window.location.href='admin.html'">Kembali ke Panel Admin</button>
+    </div>
+
+    <!-- Konten Utama Workspace User -->
+    <div id="dashboard-content" class="container" style="display: none;">
         <header class="navbar">
             <h1>Workspace &middot; <span id="user-greeting">User</span></h1>
             <div class="nav-right">
-                <button id="btn-admin-panel" class="btn-secondary btn-sm" style="display: none;"
-                    onclick="window.location.href='admin.html'">Panel Admin</button>
                 <button class="btn-danger btn-sm" onclick="logout()">Keluar</button>
             </div>
         </header>
@@ -150,14 +160,14 @@
         const token = localStorage.getItem("token");
         const role = localStorage.getItem("role");
 
-        // Route Guard
-        if (!token) window.location.href = "index.html";
-        document.getElementById("user-greeting").innerText = localStorage.getItem("userName") || "User";
-        if (role === "ADMIN") document.getElementById("btn-admin-panel").style.display = "inline-block";
-
         let allTasksCache = [];
         let currentPage = 1;
         const pageLimit = 5;
+
+        function show403() {
+            document.getElementById("dashboard-content").style.display = "none";
+            document.getElementById("forbidden-screen").style.display = "block";
+        }
 
         function authHeaders() {
             return { "Content-Type": "application/json", "Authorization": "Bearer " + token };
@@ -168,16 +178,35 @@
             window.location.href = "index.html";
         }
 
-        // Verifikasi profil & status is_active ke /auth/me
-        async function verifySession() {
+        // Validasi akses & verifikasi sesi ke /auth/me
+        async function initDashboard() {
+            if (!token) {
+                window.location.href = "index.html";
+                return;
+            }
+            if (role === "ADMIN") {
+                show403();
+                return;
+            }
+
             try {
                 const res = await fetch(`${API_URL}/auth/me`, { headers: authHeaders() });
                 if (!res.ok) return logout();
                 const json = await res.json();
                 if (json.data) {
                     if (json.data.is_active === false) return logout();
+                    if (json.data.role === "ADMIN") {
+                        localStorage.setItem("role", "ADMIN");
+                        show403();
+                        return;
+                    }
+                    document.getElementById("dashboard-content").style.display = "block";
                     document.getElementById("user-greeting").innerText = json.data.name;
                     localStorage.setItem("userName", json.data.name);
+
+                    loadSummary();
+                    loadCategories();
+                    loadTasks();
                 }
             } catch (err) {
                 console.error("Gagal verifikasi sesi:", err);
@@ -254,7 +283,7 @@
             loadTasks();
         }
 
-      async function loadTasks() {
+        async function loadTasks() {
             const search = document.getElementById("filter-search").value.trim();
             const status = document.getElementById("filter-status").value;
             const priority = document.getElementById("filter-priority").value;
@@ -283,7 +312,6 @@
             let tasks = Array.isArray(rawData) ? [...rawData] : [...(rawData?.items || rawData?.tasks || [])];
             const totalPages = rawData?.total_pages || rawData?.meta?.total_pages || null;
 
-            // Urutkan data di frontend agar dropdown selalu responsif
             const priorityRank = { HIGH: 3, MEDIUM: 2, LOW: 1 };
             tasks.sort((a, b) => {
                 if (sortValue === "due_date:asc") {
@@ -295,7 +323,6 @@
                 if (sortValue === "priority:desc") {
                     return (priorityRank[b.priority] || 0) - (priorityRank[a.priority] || 0);
                 }
-                // Default: created_at:desc (ID terbaru di atas)
                 return (b.id || 0) - (a.id || 0);
             });
 
@@ -343,7 +370,7 @@
             </td>
           </tr>`;
             });
-        }   
+        }
 
         function startEditTask(id) {
             const task = allTasksCache.find(item => item.id === id);
@@ -413,11 +440,8 @@
             loadSummary();
         }
 
-        verifySession();
-        loadSummary();
-        loadCategories();
-        loadTasks();
+        initDashboard();
     </script>
 </body>
 
-</html>  
+</html>
