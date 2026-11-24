@@ -254,28 +254,50 @@
             loadTasks();
         }
 
-        async function loadTasks() {
+      async function loadTasks() {
             const search = document.getElementById("filter-search").value.trim();
             const status = document.getElementById("filter-status").value;
             const priority = document.getElementById("filter-priority").value;
-            const [sortBy, order] = document.getElementById("filter-sort").value.split(":");
+            const sortValue = document.getElementById("filter-sort").value;
+            const [sortBy, order] = sortValue.split(":");
 
             const params = new URLSearchParams();
             if (search) params.append("search", search);
             if (status) params.append("status", status);
             if (priority) params.append("priority", priority);
-            if (sortBy) params.append("sort_by", sortBy);
-            if (order) params.append("order", order);
+            if (sortBy) {
+                params.append("sort_by", sortBy);
+                params.append("sort", sortBy);
+            }
+            if (order) {
+                params.append("order", order);
+                params.append("sort_order", order);
+            }
             params.append("page", currentPage);
             params.append("limit", pageLimit);
 
             const res = await fetch(`${API_URL}/tasks?${params.toString()}`, { headers: authHeaders() });
             const json = await res.json();
 
-            // Dukung respons array langsung maupun objek pagination { items, total_pages, page }
             const rawData = json.data;
-            const tasks = Array.isArray(rawData) ? rawData : (rawData?.items || rawData?.tasks || []);
+            let tasks = Array.isArray(rawData) ? [...rawData] : [...(rawData?.items || rawData?.tasks || [])];
             const totalPages = rawData?.total_pages || rawData?.meta?.total_pages || null;
+
+            // Urutkan data di frontend agar dropdown selalu responsif
+            const priorityRank = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+            tasks.sort((a, b) => {
+                if (sortValue === "due_date:asc") {
+                    return (a.due_date || "").localeCompare(b.due_date || "");
+                }
+                if (sortValue === "due_date:desc") {
+                    return (b.due_date || "").localeCompare(a.due_date || "");
+                }
+                if (sortValue === "priority:desc") {
+                    return (priorityRank[b.priority] || 0) - (priorityRank[a.priority] || 0);
+                }
+                // Default: created_at:desc (ID terbaru di atas)
+                return (b.id || 0) - (a.id || 0);
+            });
 
             allTasksCache = tasks;
 
@@ -321,7 +343,7 @@
             </td>
           </tr>`;
             });
-        }
+        }   
 
         function startEditTask(id) {
             const task = allTasksCache.find(item => item.id === id);

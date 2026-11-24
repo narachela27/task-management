@@ -9,7 +9,19 @@
 </head>
 
 <body>
-    <div class="container">
+    <!-- 403 Forbidden -->
+    <div id="forbidden-screen" class="auth-container" style="display: none; text-align: center;">
+        <p style="font-size: 13px; font-weight: 600; color: #dc2626; letter-spacing: 0.05em; margin-bottom: 6px;">ERROR
+            403</p>
+        <h2 style="margin-bottom: 10px;">Tidak Punya Akses</h2>
+        <p style="font-size: 13.5px; color: #64748b; margin-bottom: 22px;">
+            Halaman ini hanya dapat diakses oleh Administrator. Anda tidak memiliki izin untuk membuka halaman ini.
+        </p>
+        <button onclick="window.location.href='dashboard.html'">Kembali ke Workspace Saya</button>
+    </div>
+
+    <!-- Konten Utama -->
+    <div id="admin-content" class="container" style="display: none;">
         <header class="navbar">
             <h1>Panel Admin &middot; <span id="admin-name">Admin</span></h1>
             <div class="nav-right">
@@ -18,6 +30,26 @@
                 <button class="btn-danger btn-sm" onclick="logout()">Keluar</button>
             </div>
         </header>
+
+        <!-- Dashboard Global -->
+        <section class="summary-grid">
+            <div class="card stat-card">
+                <h3>Total Pengguna</h3>
+                <p id="glob-users">0</p>
+            </div>
+            <div class="card stat-card">
+                <h3>Total Tugas Global</h3>
+                <p id="glob-tasks">0</p>
+            </div>
+            <div class="card stat-card">
+                <h3>In Progress</h3>
+                <p id="glob-progress">0</p>
+            </div>
+            <div class="card stat-card">
+                <h3>Done</h3>
+                <p id="glob-done">0</p>
+            </div>
+        </section>
 
         <!-- Manajemen Pengguna -->
         <div class="card">
@@ -31,7 +63,8 @@
                             <th>Email</th>
                             <th>Role</th>
                             <th>Status</th>
-                            <th>Aksi</th>
+                            <th>Ubah Role</th>
+                            <th>Ubah Status</th>
                         </tr>
                     </thead>
                     <tbody id="users-table-body"></tbody>
@@ -39,7 +72,7 @@
             </div>
         </div>
 
-        <!-- Seluruh Tugas Lintas Pengguna -->
+        <!-- Seluruh Tugas Pengguna -->
         <div class="card">
             <h3 style="margin-bottom: 14px;">Semua Tugas Pengguna</h3>
             <div style="overflow-x: auto;">
@@ -53,6 +86,7 @@
                             <th>Prioritas</th>
                             <th>Status</th>
                             <th>Deadline</th>
+                            <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="admin-tasks-body"></tbody>
@@ -65,14 +99,11 @@
         const API_URL = "http://localhost:8080/api/v1";
         const token = localStorage.getItem("token");
         const role = localStorage.getItem("role");
+        let currentAdminId = null;
 
-        // Route Guard khusus ADMIN
-        if (!token) window.location.href = "index.html";
-        if (role !== "ADMIN") window.location.href = "dashboard.html";
-        document.getElementById("admin-name").innerText = localStorage.getItem("userName") || "Admin";
-
-        function authHeaders() {
-            return { "Content-Type": "application/json", "Authorization": "Bearer " + token };
+        function show403() {
+            document.getElementById("admin-content").style.display = "none";
+            document.getElementById("forbidden-screen").style.display = "block";
         }
 
         function logout() {
@@ -80,34 +111,80 @@
             window.location.href = "index.html";
         }
 
+        function authHeaders() {
+            return { "Content-Type": "application/json", "Authorization": "Bearer " + token };
+        }
+
+        async function initAdminPage() {
+            if (!token) {
+                window.location.href = "index.html";
+                return;
+            }
+            if (role !== "ADMIN") {
+                show403();
+                return;
+            }
+
+            try {
+                const meRes = await fetch(`${API_URL}/auth/me`, { headers: authHeaders() });
+                if (meRes.status === 401) return logout();
+                if (meRes.status === 403) return show403();
+
+                const meJson = await meRes.json();
+                const user = meJson.data || {};
+                if (user.is_active === false) return logout();
+                if (user.role !== "ADMIN") {
+                    localStorage.setItem("role", user.role);
+                    return show403();
+                }
+
+                currentAdminId = user.id;
+                document.getElementById("admin-content").style.display = "block";
+                document.getElementById("admin-name").innerText = user.name || localStorage.getItem("userName") || "Admin";
+                loadUsers();
+                loadAllTasks();
+            } catch (err) {
+                alert("Gagal terhubung ke server backend.");
+            }
+        }
+
         async function loadUsers() {
             const res = await fetch(`${API_URL}/admin/users`, { headers: authHeaders() });
-            if (res.status === 401 || res.status === 403) return logout();
+            if (res.status === 401) return logout();
+            if (res.status === 403) return show403();
+
             const json = await res.json();
             const users = json.data || [];
+            document.getElementById("glob-users").innerText = users.length;
+
             const tbody = document.getElementById("users-table-body");
             tbody.innerHTML = "";
 
             if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 24px;">Belum ada pengguna.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 24px;">Belum ada pengguna.</td></tr>';
                 return;
             }
 
             users.forEach(u => {
-                const nextRole = u.role === "ADMIN" ? "USER" : "ADMIN";
-                const nextStatus = !u.is_active;
+                const isSelf = u.id === currentAdminId;
                 tbody.innerHTML += `
           <tr>
             <td style="color: #64748b;">#${u.id}</td>
-            <td style="font-weight: 500;">${u.name}</td>
+            <td style="font-weight: 500;">${u.name} ${isSelf ? '<span style="font-size: 11px; color: #64748b;">(Anda)</span>' : ''}</td>
             <td style="color: #64748b;">${u.email}</td>
             <td><span class="badge ${u.role === "ADMIN" ? "badge-MEDIUM" : "badge-TODO"}">${u.role}</span></td>
             <td>${u.is_active ? '<span class="badge badge-DONE">Aktif</span>' : '<span class="badge badge-HIGH">Nonaktif</span>'}</td>
             <td>
-              <div style="display: flex; gap: 6px;">
-                <button class="btn-secondary btn-sm" onclick="changeRole(${u.id}, '${nextRole}')">Ubah ke ${nextRole}</button>
-                <button class="${u.is_active ? "btn-danger" : "btn-secondary"} btn-sm" onclick="toggleStatus(${u.id}, ${nextStatus})">${u.is_active ? "Nonaktifkan" : "Aktifkan"}</button>
-              </div>
+              <select onchange="changeRole(${u.id}, this.value)" ${isSelf ? 'disabled title="Tidak dapat mengubah role sendiri"' : ''} style="padding: 5px 10px; font-size: 12.5px; width: auto; min-width: 105px;">
+                <option value="USER" ${u.role === "USER" ? "selected" : ""}>USER</option>
+                <option value="ADMIN" ${u.role === "ADMIN" ? "selected" : ""}>ADMIN</option>
+              </select>
+            </td>
+            <td>
+              <select onchange="toggleStatus(${u.id}, this.value === 'true')" ${isSelf ? 'disabled title="Tidak dapat menonaktifkan akun sendiri"' : ''} style="padding: 5px 10px; font-size: 12.5px; width: auto; min-width: 115px;">
+                <option value="true" ${u.is_active ? "selected" : ""}>Aktif</option>
+                <option value="false" ${!u.is_active ? "selected" : ""}>Nonaktif</option>
+              </select>
             </td>
           </tr>`;
             });
@@ -117,6 +194,7 @@
             const res = await fetch(`${API_URL}/admin/users/${id}/role`, {
                 method: "PATCH", headers: authHeaders(), body: JSON.stringify({ role: newRole })
             });
+            if (res.status === 403) return show403();
             const json = await res.json();
             if (!res.ok) alert(json.message || "Gagal mengubah role.");
             loadUsers();
@@ -126,6 +204,7 @@
             const res = await fetch(`${API_URL}/admin/users/${id}/status`, {
                 method: "PATCH", headers: authHeaders(), body: JSON.stringify({ is_active })
             });
+            if (res.status === 403) return show403();
             const json = await res.json();
             if (!res.ok) alert(json.message || "Gagal mengubah status akun.");
             loadUsers();
@@ -133,13 +212,22 @@
 
         async function loadAllTasks() {
             const res = await fetch(`${API_URL}/admin/tasks`, { headers: authHeaders() });
+            if (res.status === 401) return logout();
+            if (res.status === 403) return show403();
+
             const json = await res.json();
             const tasks = Array.isArray(json.data) ? json.data : (json.data?.items || []);
+
+            // Hitung statistik global dari seluruh tugas
+            document.getElementById("glob-tasks").innerText = tasks.length;
+            document.getElementById("glob-progress").innerText = tasks.filter(t => t.status === "IN_PROGRESS").length;
+            document.getElementById("glob-done").innerText = tasks.filter(t => t.status === "DONE").length;
+
             const tbody = document.getElementById("admin-tasks-body");
             tbody.innerHTML = "";
 
             if (tasks.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 24px;">Belum ada tugas dari pengguna mana pun.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #64748b; padding: 24px;">Belum ada tugas dari pengguna mana pun.</td></tr>';
                 return;
             }
 
@@ -153,12 +241,45 @@
             <td><span class="badge badge-${t.priority}">${t.priority}</span></td>
             <td><span class="badge badge-${t.status}">${t.status}</span></td>
             <td style="white-space: nowrap; color: #64748b;">${(t.due_date || "").slice(0, 10)}</td>
+            <td style="white-space: nowrap;">
+              <button class="btn-danger btn-sm" onclick="deleteAdminTask(${t.id})" title="Hapus Tugas" style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 8px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+              </button>
+            </td>
           </tr>`;
             });
         }
 
-        loadUsers();
-        loadAllTasks();
+        async function deleteAdminTask(id) {
+            if (!confirm("Anda yakin ingin menghapus tugas ini?")) return;
+
+            let res = await fetch(`${API_URL}/admin/tasks/${id}`, {
+                method: "DELETE", headers: authHeaders()
+            });
+
+            if (res.status === 404) {
+                res = await fetch(`${API_URL}/tasks/${id}`, {
+                    method: "DELETE", headers: authHeaders()
+                });
+            }
+
+            if (res.status === 401) return logout();
+            if (res.status === 403) return show403();
+
+            if (res.ok) {
+                loadAllTasks();
+            } else {
+                const json = await res.json().catch(() => ({}));
+                alert(json.message || "Gagal menghapus tugas. Pastikan endpoint DELETE /admin/tasks/:id tersedia di backend.");
+            }
+        }
+
+        initAdminPage();
     </script>
 </body>
 
