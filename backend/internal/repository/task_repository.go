@@ -178,6 +178,16 @@ func (r *TaskRepository) Delete(ctx context.Context, id, userID int64) (bool, er
 	return affected > 0, err
 }
 
+func (r *TaskRepository) DeleteByID(ctx context.Context, id int64) (bool, error) {
+	query := `DELETE FROM tasks WHERE id = ?`
+	res, err := r.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return false, err
+	}
+	affected, err := res.RowsAffected()
+	return affected > 0, err
+}
+
 func (r *TaskRepository) GetSummaryByUserID(ctx context.Context, userID int64) (*dto.TaskSummaryResponse, error) {
 	query := `SELECT
 		COUNT(*) AS total,
@@ -195,6 +205,7 @@ func (r *TaskRepository) GetSummaryByUserID(ctx context.Context, userID int64) (
 	}
 	return &summary, nil
 }
+
 func (r *TaskRepository) FindAllForAdmin(ctx context.Context, filter dto.AdminTaskFilterQuery) ([]dto.AdminTaskResponse, int, error) {
 	var conditions []string
 	var args []interface{}

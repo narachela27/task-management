@@ -87,6 +87,7 @@ func SetupRouter(db *sql.DB) *gin.Engine {
 			admin.PATCH("/users/:id/role", adminHandler.UpdateUserRole)
 			admin.PATCH("/users/:id/status", adminHandler.UpdateUserStatus)
 			admin.GET("/tasks", adminHandler.GetAllTasks)
+			admin.DELETE("/tasks/:id", taskHandler.AdminDeleteTask)
 		}
 	}
 

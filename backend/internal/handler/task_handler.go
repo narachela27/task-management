@@ -260,6 +260,37 @@ func (h *TaskHandler) Delete(c *gin.Context) {
 	})
 }
 
+func (h *TaskHandler) AdminDeleteTask(c *gin.Context) {
+	taskID, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || taskID <= 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "ID task tidak valid",
+		})
+		return
+	}
+
+	if err := h.TaskService.DeleteByAdmin(c.Request.Context(), taskID); err != nil {
+		if errors.Is(err, service.ErrTaskNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Gagal menghapus task",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Task berhasil dihapus oleh Admin",
+	})
+}
+
 func (h *TaskHandler) Summary(c *gin.Context) {
 	userID := c.GetInt64("user_id")
 	summary, err := h.TaskService.GetSummary(c.Request.Context(), userID)

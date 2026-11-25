@@ -277,6 +277,17 @@ func (s *TaskService) Delete(ctx context.Context, userID, taskID int64) error {
 	return nil
 }
 
+func (s *TaskService) DeleteByAdmin(ctx context.Context, taskID int64) error {
+	deleted, err := s.TaskRepo.DeleteByID(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	if !deleted {
+		return ErrTaskNotFound
+	}
+	return nil
+}
+
 func (s *TaskService) GetSummary(ctx context.Context, userID int64) (*dto.TaskSummaryResponse, error) {
 	return s.TaskRepo.GetSummaryByUserID(ctx, userID)
 }
