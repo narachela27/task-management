@@ -7,14 +7,11 @@
     <title>Masuk — Task Management</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* Palet: Something Blue (#D8EBF9), Mother Earth (#513229), Lucky Dice (#F4F1E2), The Bay (#FCE6B7), Walking Vinnie (#D7D4B1) */
         body {
-            background-color: #F7EFDA !important;
-            background-image: repeating-linear-gradient(90deg,
-                    #B9D5E3 0px,
-                    #B9D5E3 36px,
-                    #F7EFDA 36px,
-                    #F7EFDA 72px) !important;
-            color: #2D2520 !important;
+            background-color: #D8EBF9 !important;
+            background-image: none !important;
+            color: #3A231D !important;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -23,10 +20,11 @@
         }
 
         .auth-container {
-            background: #FCF7EA !important;
-            border: 2px solid #E5D7B8 !important;
+            background: #FFFFFF !important;
+            border: 1.5px solid #B5D2E8 !important;
+            border-top: 5px solid #513229 !important;
             border-radius: 18px !important;
-            box-shadow: 0 14px 32px rgba(45, 37, 32, 0.08) !important;
+            box-shadow: 0 14px 32px rgba(58, 35, 29, 0.08) !important;
             padding: 32px 28px !important;
             max-width: 400px;
             width: 100%;
@@ -34,33 +32,38 @@
         }
 
         .auth-container h2 {
-            color: #C83A2B !important;
+            color: #513229 !important;
             font-weight: 700;
             letter-spacing: -0.02em;
             margin-bottom: 18px;
         }
 
         .form-group label {
-            color: #4A3E36 !important;
+            color: #513229 !important;
             font-weight: 600;
         }
 
         .auth-container input {
-            background: #FFFDF8 !important;
-            border: 1.5px solid #DFCFAF !important;
-            color: #2D2520 !important;
+            background: #F8FAFC !important;
+            border: 1.5px solid #C2D9EB !important;
+            color: #3A231D !important;
             border-radius: 10px !important;
+        }
+
+        .auth-container input::placeholder {
+            color: #8A766E !important;
         }
 
         .auth-container input:focus {
             outline: none;
-            border-color: #8EBAD1 !important;
-            box-shadow: 0 0 0 3px rgba(185, 213, 227, 0.45) !important;
+            background: #FFFFFF !important;
+            border-color: #513229 !important;
+            box-shadow: 0 0 0 3px rgba(81, 50, 41, 0.12) !important;
         }
 
         .auth-container button[type="submit"] {
-            background: #C83A2B !important;
-            color: #FCF7EA !important;
+            background: #513229 !important;
+            color: #F4F1E2 !important;
             border: none !important;
             border-radius: 10px !important;
             font-weight: 600;
@@ -68,15 +71,16 @@
         }
 
         .auth-container button[type="submit"]:hover {
-            background: #A92E21 !important;
+            background: #3A231D !important;
         }
 
         .toggle-link {
-            color: #5C4E44 !important;
+            color: #6E5349 !important;
         }
 
         .toggle-link:hover {
-            color: #C83A2B !important;
+            color: #513229 !important;
+            text-decoration: underline;
         }
 
         .password-wrapper {
@@ -101,7 +105,7 @@
             margin: 0 !important;
             background: transparent !important;
             border: none !important;
-            color: #7A6B5D !important;
+            color: #6E5349 !important;
             cursor: pointer;
             display: flex !important;
             align-items: center;
@@ -110,7 +114,7 @@
         }
 
         .password-wrapper .toggle-pw-btn:hover {
-            color: #C83A2B !important;
+            color: #513229 !important;
             background: transparent !important;
         }
     </style>
@@ -188,7 +192,6 @@
             btn.title = isHidden ? "Sembunyikan Password" : "Lihat Password";
         }
 
-        // Route Guard: Redirect jika sudah login
         const existingToken = localStorage.getItem("token");
         const existingRole = localStorage.getItem("role");
         if (existingToken) {
@@ -209,7 +212,6 @@
             box.className = "alert " + type;
         }
 
-        // Submit Login
         document.getElementById("login-form").addEventListener("submit", async (e) => {
             e.preventDefault();
             const email = document.getElementById("login-email").value.trim();
@@ -235,7 +237,6 @@
             }
         });
 
-        // Submit Register
         document.getElementById("register-form").addEventListener("submit", async (e) => {
             e.preventDefault();
             const name = document.getElementById("reg-name").value.trim();
