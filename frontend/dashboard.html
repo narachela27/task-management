@@ -6,18 +6,232 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard — Task Management</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Palet Warna: Warm Cream, Soft Pastel Blue, Terracotta Red & Espresso Brown */
+        body {
+            background-color: #F7EFDA !important;
+            color: #2D2520 !important;
+        }
+
+        .navbar {
+            background: #FCF7EA !important;
+            border: 2px solid #E5D7B8 !important;
+            border-radius: 14px !important;
+            box-shadow: 0 4px 12px rgba(45, 37, 32, 0.05) !important;
+        }
+
+        .navbar h1 {
+            color: #C83A2B !important;
+        }
+
+        .navbar h1 span {
+            color: #2D2520 !important;
+        }
+
+        .card {
+            background: #FCF7EA !important;
+            border: 2px solid #E5D7B8 !important;
+            border-radius: 14px !important;
+            box-shadow: 0 6px 16px rgba(45, 37, 32, 0.04) !important;
+        }
+
+        .card h3 {
+            color: #2D2520 !important;
+        }
+
+        .stat-card {
+            background: #FFFDF8 !important;
+            border-top: 4px solid #B9D5E3 !important;
+        }
+
+        .stat-card h3 {
+            color: #6B5C4E !important;
+        }
+
+        .stat-card p {
+            color: #C83A2B !important;
+        }
+
+        label {
+            color: #4A3E36 !important;
+        }
+
+        input,
+        select,
+        textarea {
+            background: #FFFDF8 !important;
+            border: 1.5px solid #DFCFAF !important;
+            color: #2D2520 !important;
+            border-radius: 10px !important;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #8EBAD1 !important;
+            box-shadow: 0 0 0 3px rgba(185, 213, 227, 0.45) !important;
+        }
+
+        button[type="submit"],
+        .auth-container button {
+            background: #C83A2B !important;
+            color: #FCF7EA !important;
+            border: none !important;
+            border-radius: 10px !important;
+        }
+
+        button[type="submit"]:hover,
+        .auth-container button:hover {
+            background: #A92E21 !important;
+        }
+
+        .btn-secondary {
+            background: #DCEAF1 !important;
+            color: #2D2520 !important;
+            border: 1px solid #B9D5E3 !important;
+            border-radius: 8px !important;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #B9D5E3 !important;
+        }
+
+        .btn-danger {
+            background: #FBE4E1 !important;
+            color: #C83A2B !important;
+            border: 1px solid #F3C1BA !important;
+            border-radius: 8px !important;
+        }
+
+        .btn-danger:hover {
+            background: #C83A2B !important;
+            color: #FCF7EA !important;
+        }
+
+        table th {
+            background: #EFE4CA !important;
+            color: #4A3E36 !important;
+            border-bottom: 1.5px solid #E5D7B8 !important;
+        }
+
+        table td {
+            border-bottom: 1px solid #EFE4CA !important;
+            color: #2D2520 !important;
+        }
+
+        .badge-HIGH {
+            background: #FBE4E1 !important;
+            color: #C83A2B !important;
+        }
+
+        .badge-MEDIUM {
+            background: #F7E5B7 !important;
+            color: #8C5E1A !important;
+        }
+
+        .badge-LOW,
+        .badge-TODO {
+            background: #DCEAF1 !important;
+            color: #2C5266 !important;
+        }
+
+        .badge-DONE {
+            background: #DCEAD8 !important;
+            color: #2F5D3A !important;
+        }
+
+        /* Custom Pop-up Modal Konfirmasi */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(45, 37, 32, 0.45);
+            backdrop-filter: blur(2px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            padding: 16px;
+        }
+
+        .modal-backdrop.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #FCF7EA;
+            border: 2px solid #E5D7B8;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 100%;
+            padding: 24px;
+            box-shadow: 0 20px 25px -5px rgba(45, 37, 32, 0.18);
+            animation: popIn 0.16s ease-out;
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            width: auto;
+            margin: 0;
+        }
+
+        .btn-confirm-delete {
+            background: #C83A2B !important;
+            color: #FCF7EA !important;
+            border: none !important;
+            border-radius: 8px !important;
+        }
+
+        .btn-confirm-delete:hover {
+            background: #A92E21 !important;
+        }
+    </style>
 </head>
 
 <body>
     <!-- Tampilan Khusus 403 Forbidden jika Admin membuka halaman User -->
-    <div id="forbidden-screen" class="auth-container" style="display: none; text-align: center;">
-        
-        <h2 style="margin-bottom: 10px;">Tidak Punya Akses</h2>
-        <p style="font-size: 13.5px; color: #64748b; margin-bottom: 22px;">
+    <div id="forbidden-screen" class="auth-container"
+        style="display: none; text-align: center; background: #FCF7EA; border: 2px solid #E5D7B8;">
+        <p style="font-size: 13px; font-weight: 600; color: #C83A2B; letter-spacing: 0.05em; margin-bottom: 6px;">ERROR
+            403</p>
+        <h2 style="margin-bottom: 10px; color: #2D2520;">Tidak Punya Akses</h2>
+        <p style="font-size: 13.5px; color: #6B5C4E; margin-bottom: 22px;">
             Halaman Workspace ini hanya diperuntukkan bagi pengguna (USER). Sebagai Administrator, silakan kelola sistem
             melalui Panel Admin.
         </p>
         <button onclick="window.location.href='admin.html'">Kembali ke Panel Admin</button>
+    </div>
+
+    <!-- Pop-up Modal Konfirmasi Keluar (Logout) -->
+    <div id="logout-modal" class="modal-backdrop" onclick="if(event.target === this) closeLogoutModal()">
+        <div class="modal-box">
+            <h3 style="margin-bottom: 6px; font-size: 16.5px; color: #2D2520;">Keluar dari Workspace?</h3>
+            <p style="font-size: 13.5px; color: #6B5C4E; line-height: 1.5;">
+                Anda yakin ingin keluar dari akun ini? Anda perlu masuk kembali untuk mengakses Workspace.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeLogoutModal()">Batal</button>
+                <button type="button" class="btn-confirm-delete" onclick="logout()">Ya, Keluar</button>
+            </div>
+        </div>
     </div>
 
     <!-- Konten Utama Workspace User -->
@@ -25,7 +239,7 @@
         <header class="navbar">
             <h1>Workspace &middot; <span id="user-greeting">User</span></h1>
             <div class="nav-right">
-                <button class="btn-danger btn-sm" onclick="logout()">Keluar</button>
+                <button class="btn-danger btn-sm" onclick="openLogoutModal()">Keluar</button>
             </div>
         </header>
 
@@ -53,10 +267,13 @@
             <!-- Sidebar Kiri: Kategori & Form Tugas -->
             <div>
                 <div class="card">
-                    <h3 style="margin-bottom: 14px;">Kategori</h3>
+                    <h3 id="cat-form-heading" style="margin-bottom: 14px;">Kategori</h3>
                     <form id="category-form" style="display: flex; gap: 8px; margin-bottom: 14px;">
+                        <input type="hidden" id="edit-cat-id">
                         <input type="text" id="cat-name" placeholder="Kategori baru..." required>
-                        <button type="submit">Tambah</button>
+                        <button type="submit" id="btn-save-cat">Tambah</button>
+                        <button type="button" id="btn-cancel-cat" class="btn-secondary" style="display: none;"
+                            onclick="resetCategoryForm()">Batal</button>
                     </form>
                     <ul id="category-list" style="list-style: none;"></ul>
                 </div>
@@ -144,8 +361,8 @@
 
                 <!-- Pagination Controls -->
                 <div
-                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid #f1f5f9;">
-                    <span id="page-info" style="font-size: 13px; color: #64748b;">Halaman 1</span>
+                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 12px; border-top: 1px solid #EFE4CA;">
+                    <span id="page-info" style="font-size: 13px; color: #6B5C4E;">Halaman 1</span>
                     <div style="display: flex; gap: 6px;">
                         <button id="btn-prev" class="btn-secondary btn-sm" onclick="changePage(-1)">Sebelumnya</button>
                         <button id="btn-next" class="btn-secondary btn-sm" onclick="changePage(1)">Berikutnya</button>
@@ -160,9 +377,18 @@
         const token = localStorage.getItem("token");
         const role = localStorage.getItem("role");
 
+        let allCategoriesCache = [];
         let allTasksCache = [];
         let currentPage = 1;
         const pageLimit = 5;
+
+        function openLogoutModal() {
+            document.getElementById("logout-modal").classList.add("show");
+        }
+
+        function closeLogoutModal() {
+            document.getElementById("logout-modal").classList.remove("show");
+        }
 
         function show403() {
             document.getElementById("dashboard-content").style.display = "none";
@@ -228,6 +454,8 @@
             const res = await fetch(`${API_URL}/categories`, { headers: authHeaders() });
             const json = await res.json();
             const list = json.data || [];
+            allCategoriesCache = list;
+
             const ul = document.getElementById("category-list");
             const select = document.getElementById("task-category");
 
@@ -235,40 +463,76 @@
             select.innerHTML = '<option value="">Pilih kategori</option>';
 
             if (list.length === 0) {
-                ul.innerHTML = '<li style="font-size: 13px; color: #64748b;">Belum ada kategori.</li>';
+                ul.innerHTML = '<li style="font-size: 13px; color: #6B5C4E;">Belum ada kategori.</li>';
                 return;
             }
 
             list.forEach(cat => {
                 ul.innerHTML += `
-          <li style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13.5px;">
+          <li style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #EFE4CA; font-size: 13.5px;">
             <span>${cat.name}</span>
-            <button class="btn-danger btn-sm" onclick="deleteCategory(${cat.id})">Hapus</button>
+            <div style="display: flex; gap: 6px;">
+              <button type="button" class="btn-secondary btn-sm" onclick="startEditCategory(${cat.id})">Edit</button>
+              <button type="button" class="btn-danger btn-sm" onclick="deleteCategory(${cat.id})">Hapus</button>
+            </div>
           </li>`;
                 select.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
             });
         }
 
+        function startEditCategory(id) {
+            const cat = allCategoriesCache.find(item => item.id === id);
+            if (!cat) return;
+
+            document.getElementById("edit-cat-id").value = cat.id;
+            document.getElementById("cat-name").value = cat.name;
+            document.getElementById("cat-form-heading").innerText = "Edit Kategori";
+            document.getElementById("btn-save-cat").innerText = "Simpan";
+            document.getElementById("btn-cancel-cat").style.display = "inline-block";
+            document.getElementById("cat-name").focus();
+        }
+
+        function resetCategoryForm() {
+            document.getElementById("category-form").reset();
+            document.getElementById("edit-cat-id").value = "";
+            document.getElementById("cat-form-heading").innerText = "Kategori";
+            document.getElementById("btn-save-cat").innerText = "Tambah";
+            document.getElementById("btn-cancel-cat").style.display = "none";
+        }
+
         document.getElementById("category-form").addEventListener("submit", async (e) => {
             e.preventDefault();
+            const editId = document.getElementById("edit-cat-id").value;
             const name = document.getElementById("cat-name").value.trim();
-            const res = await fetch(`${API_URL}/categories`, {
-                method: "POST", headers: authHeaders(), body: JSON.stringify({ name })
+
+            const url = editId ? `${API_URL}/categories/${editId}` : `${API_URL}/categories`;
+            const method = editId ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method, headers: authHeaders(), body: JSON.stringify({ name })
             });
+
             if (res.ok) {
-                document.getElementById("cat-name").value = "";
-                loadCategories();
+                resetCategoryForm();
+                await loadCategories();
+                if (editId) loadTasks();
             } else {
-                const err = await res.json();
-                alert(err.message || "Gagal menambah kategori.");
+                const err = await res.json().catch(() => ({}));
+                alert(err.message || (editId ? "Gagal memperbarui kategori." : "Gagal menambah kategori."));
             }
         });
 
         async function deleteCategory(id) {
             if (!confirm("Hapus kategori ini?")) return;
             const res = await fetch(`${API_URL}/categories/${id}`, { method: "DELETE", headers: authHeaders() });
-            if (res.ok) loadCategories();
-            else alert("Kategori masih digunakan oleh tugas.");
+            if (res.ok) {
+                if (document.getElementById("edit-cat-id").value === String(id)) {
+                    resetCategoryForm();
+                }
+                loadCategories();
+            } else {
+                alert("Kategori masih digunakan oleh tugas.");
+            }
         }
 
         function resetPageAndLoad() {
@@ -341,7 +605,7 @@
                 : tasks.length < pageLimit;
 
             if (tasks.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 24px;">Tidak ada tugas ditemukan.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #6B5C4E; padding: 24px;">Tidak ada tugas ditemukan.</td></tr>';
                 return;
             }
 
@@ -350,7 +614,7 @@
           <tr>
             <td>
               <div style="font-weight: 500;">${t.title}</div>
-              ${t.description ? `<div style="font-size: 12px; color: #64748b; margin-top: 2px;">${t.description}</div>` : ""}
+              ${t.description ? `<div style="font-size: 12px; color: #6B5C4E; margin-top: 2px;">${t.description}</div>` : ""}
             </td>
             <td>${t.category_name || "-"}</td>
             <td><span class="badge badge-${t.priority}">${t.priority}</span></td>
@@ -361,7 +625,7 @@
                 <option value="DONE" ${t.status === "DONE" ? "selected" : ""}>DONE</option>
               </select>
             </td>
-            <td style="white-space: nowrap; color: #64748b;">${(t.due_date || "").slice(0, 10)}</td>
+            <td style="white-space: nowrap; color: #6B5C4E;">${(t.due_date || "").slice(0, 10)}</td>
             <td style="white-space: nowrap;">
               <div style="display: flex; gap: 6px;">
                 <button class="btn-secondary btn-sm" onclick="startEditTask(${t.id})">Edit</button>

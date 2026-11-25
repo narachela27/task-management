@@ -6,25 +6,328 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Admin — Task Management</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Palet Warna: Warm Cream, Soft Pastel Blue, Terracotta Red & Espresso Brown */
+        body {
+            background-color: #F7EFDA !important;
+            color: #2D2520 !important;
+        }
+
+        .navbar {
+            background: #FCF7EA !important;
+            border: 2px solid #E5D7B8 !important;
+            border-radius: 14px !important;
+            box-shadow: 0 4px 12px rgba(45, 37, 32, 0.05) !important;
+        }
+
+        .navbar h1 {
+            color: #C83A2B !important;
+        }
+
+        .navbar h1 span {
+            color: #2D2520 !important;
+        }
+
+        .card {
+            background: #FCF7EA !important;
+            border: 2px solid #E5D7B8 !important;
+            border-radius: 14px !important;
+            box-shadow: 0 6px 16px rgba(45, 37, 32, 0.04) !important;
+        }
+
+        .card h3 {
+            color: #2D2520 !important;
+        }
+
+        .stat-card {
+            background: #FFFDF8 !important;
+            border-top: 4px solid #B9D5E3 !important;
+        }
+
+        .stat-card h3 {
+            color: #6B5C4E !important;
+        }
+
+        .stat-card p {
+            color: #C83A2B !important;
+        }
+
+        input,
+        select {
+            background: #FFFDF8 !important;
+            border: 1.5px solid #DFCFAF !important;
+            color: #2D2520 !important;
+            border-radius: 10px !important;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #8EBAD1 !important;
+            box-shadow: 0 0 0 3px rgba(185, 213, 227, 0.45) !important;
+        }
+
+        .btn-secondary {
+            background: #DCEAF1 !important;
+            color: #2D2520 !important;
+            border: 1px solid #B9D5E3 !important;
+            border-radius: 8px !important;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #B9D5E3 !important;
+        }
+
+        .btn-danger {
+            background: #FBE4E1 !important;
+            color: #C83A2B !important;
+            border: 1px solid #F3C1BA !important;
+            border-radius: 8px !important;
+        }
+
+        .btn-danger:hover {
+            background: #C83A2B !important;
+            color: #FCF7EA !important;
+        }
+
+        .split-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 920px) {
+            .split-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .user-item {
+            padding: 12px 14px;
+            border: 1.5px solid #DFCFAF;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            background: #FFFDF8;
+        }
+
+        .user-item:hover {
+            border-color: #8EBAD1;
+            background: #F4ECE0;
+        }
+
+        .user-item.selected {
+            border-color: #C83A2B;
+            background: #F7EFDA;
+            box-shadow: 0 2px 6px rgba(200, 58, 43, 0.08);
+        }
+
+        .user-item-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .user-controls {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed #DFCFAF;
+        }
+
+        .user-controls select {
+            padding: 4px 8px;
+            font-size: 12px;
+            margin: 0;
+        }
+
+        .user-list-scroll {
+            max-height: 520px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        table th {
+            background: #EFE4CA !important;
+            color: #4A3E36 !important;
+            border-bottom: 1.5px solid #E5D7B8 !important;
+        }
+
+        table td {
+            border-bottom: 1px solid #EFE4CA !important;
+            color: #2D2520 !important;
+        }
+
+        .badge-HIGH {
+            background: #FBE4E1 !important;
+            color: #C83A2B !important;
+        }
+
+        .badge-MEDIUM {
+            background: #F7E5B7 !important;
+            color: #8C5E1A !important;
+        }
+
+        .badge-LOW,
+        .badge-TODO,
+        .badge-IN_PROGRESS {
+            background: #DCEAF1 !important;
+            color: #2C5266 !important;
+        }
+
+        .badge-DONE {
+            background: #DCEAD8 !important;
+            color: #2F5D3A !important;
+        }
+
+        /* Custom Pop-up Modal Konfirmasi */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(45, 37, 32, 0.45);
+            backdrop-filter: blur(2px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            padding: 16px;
+        }
+
+        .modal-backdrop.show {
+            display: flex;
+        }
+
+        .modal-box {
+            background: #FCF7EA;
+            border: 2px solid #E5D7B8;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 100%;
+            padding: 24px;
+            box-shadow: 0 20px 25px -5px rgba(45, 37, 32, 0.18);
+            animation: popIn 0.16s ease-out;
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            width: auto;
+            margin: 0;
+        }
+
+        .btn-confirm-delete {
+            background: #C83A2B !important;
+            color: #FCF7EA !important;
+            border: none !important;
+            border-radius: 8px !important;
+        }
+
+        .btn-confirm-delete:hover {
+            background: #A92E21 !important;
+        }
+
+        /* Toast Notifikasi */
+        .toast-notice {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #2D2520;
+            color: #FCF7EA;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            box-shadow: 0 10px 15px -3px rgba(45, 37, 32, 0.25);
+            z-index: 1000;
+            display: none;
+        }
+
+        .toast-notice.error {
+            background: #C83A2B;
+            color: #FCF7EA;
+        }
+
+        .toast-notice.show {
+            display: block;
+            animation: popIn 0.16s ease-out;
+        }
+    </style>
 </head>
 
 <body>
     <!-- 403 Forbidden -->
-    <div id="forbidden-screen" class="auth-container" style="display: none; text-align: center;">
-        
-        <h2 style="margin-bottom: 10px;">Tidak Punya Akses</h2>
-        <p style="font-size: 13.5px; color: #64748b; margin-bottom: 22px;">
+    <div id="forbidden-screen" class="auth-container"
+        style="display: none; text-align: center; background: #FCF7EA; border: 2px solid #E5D7B8;">
+        <p style="font-size: 13px; font-weight: 600; color: #C83A2B; letter-spacing: 0.05em; margin-bottom: 6px;">ERROR
+            403</p>
+        <h2 style="margin-bottom: 10px; color: #2D2520;">Tidak Punya Akses</h2>
+        <p style="font-size: 13.5px; color: #6B5C4E; margin-bottom: 22px;">
             Halaman ini hanya dapat diakses oleh Administrator. Anda tidak memiliki izin untuk membuka halaman ini.
         </p>
-        <button onclick="window.location.href='dashboard.html'">Kembali ke Workspace Saya</button>
+        <button onclick="window.location.href='dashboard.html'"
+            style="background: #C83A2B; color: #FCF7EA; border: none; border-radius: 10px;">Kembali ke Workspace
+            Saya</button>
     </div>
+
+    <!-- Pop-up Modal Konfirmasi Hapus -->
+    <div id="delete-modal" class="modal-backdrop" onclick="if(event.target === this) closeDeleteModal()">
+        <div class="modal-box">
+            <h3 style="margin-bottom: 6px; font-size: 16.5px; color: #2D2520;">Hapus Tugas Ini?</h3>
+            <p id="delete-modal-desc" style="font-size: 13.5px; color: #6B5C4E; line-height: 1.5;">
+                Tindakan ini tidak dapat dibatalkan. Data tugas akan dihapus secara permanen dari sistem.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeDeleteModal()">Batal</button>
+                <button type="button" id="btn-confirm-delete" class="btn-confirm-delete"
+                    onclick="confirmDeleteTask()">Ya, Hapus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pop-up Modal Konfirmasi Keluar (Logout) -->
+    <div id="logout-modal" class="modal-backdrop" onclick="if(event.target === this) closeLogoutModal()">
+        <div class="modal-box">
+            <h3 style="margin-bottom: 6px; font-size: 16.5px; color: #2D2520;">Keluar dari Panel Admin?</h3>
+            <p style="font-size: 13.5px; color: #6B5C4E; line-height: 1.5;">
+                Anda yakin ingin keluar dari akun ini? Anda perlu masuk kembali untuk mengakses Panel Admin.
+            </p>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeLogoutModal()">Batal</button>
+                <button type="button" class="btn-confirm-delete" onclick="logout()">Ya, Keluar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifikasi -->
+    <div id="toast-box" class="toast-notice"></div>
 
     <!-- Konten Utama -->
     <div id="admin-content" class="container" style="display: none;">
         <header class="navbar">
             <h1>Panel Admin &middot; <span id="admin-name">Admin</span></h1>
             <div class="nav-right">
-                <button class="btn-danger btn-sm" onclick="logout()">Keluar</button>
+                <button class="btn-danger btn-sm" onclick="openLogoutModal()">Keluar</button>
             </div>
         </header>
 
@@ -48,46 +351,79 @@
             </div>
         </section>
 
-        <!-- Manajemen Pengguna -->
-        <div class="card">
-            <h3 style="margin-bottom: 14px;">Manajemen Pengguna</h3>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nama</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Ubah Role</th>
-                            <th>Ubah Status</th>
-                        </tr>
-                    </thead>
-                    <tbody id="users-table-body"></tbody>
-                </table>
-            </div>
-        </div>
+        <!-- Split View -->
+        <div class="split-layout">
+            <!-- KOLOM KIRI: Manajemen Pengguna -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0;">Manajemen Pengguna</h3>
+                    <span style="font-size: 11.5px; color: #6B5C4E;">Klik untuk filter</span>
+                </div>
 
-        <!-- Seluruh Tugas Pengguna -->
-        <div class="card">
-            <h3 style="margin-bottom: 14px;">Semua Tugas Pengguna</h3>
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Pemilik</th>
-                            <th>Judul Tugas</th>
-                            <th>Kategori</th>
-                            <th>Prioritas</th>
-                            <th>Status</th>
-                            <th>Deadline</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-tasks-body"></tbody>
-                </table>
+                <input type="text" id="search-user" placeholder="Cari nama atau email..." oninput="renderUsersList()"
+                    style="margin-bottom: 12px;">
+
+                <div id="user-card-all" class="user-item selected" onclick="selectUserFilter(null)">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <strong style="font-size: 13.5px; color: #2D2520;">Semua Pengguna (Global)</strong>
+                        <span class="badge badge-TODO" id="all-tasks-pill">0 tugas</span>
+                    </div>
+                    <p style="font-size: 12px; color: #6B5C4E; margin-top: 4px;">Menampilkan tugas dari semua akun</p>
+                </div>
+
+                <div id="users-list-container" class="user-list-scroll"></div>
+            </div>
+
+            <!-- KOLOM KANAN: Semua Tugas Pengguna -->
+            <div class="card">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+                    <div>
+                        <h3 id="tasks-panel-title" style="margin: 0;">Semua Tugas Pengguna</h3>
+                        <p id="tasks-panel-subtitle" style="font-size: 12.5px; color: #6B5C4E; margin-top: 2px;">
+                            Menampilkan tugas seluruh pengguna</p>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <input type="text" id="search-admin-task" placeholder="Cari judul tugas..."
+                            oninput="taskPage = 1; renderTasksTable()" style="width: 185px; margin: 0;">
+                        <select id="filter-admin-status" onchange="taskPage = 1; renderTasksTable()"
+                            style="width: auto; margin: 0;">
+                            <option value="">Semua Status</option>
+                            <option value="TODO">TODO</option>
+                            <option value="IN_PROGRESS">IN_PROGRESS</option>
+                            <option value="DONE">DONE</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Pemilik</th>
+                                <th>Judul Tugas</th>
+                                <th>Kategori</th>
+                                <th>Prioritas</th>
+                                <th>Status</th>
+                                <th>Deadline</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-tasks-body"></tbody>
+                    </table>
+                </div>
+
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid #EFE4CA;">
+                    <span id="task-page-info" style="font-size: 13px; color: #6B5C4E;">Halaman 1</span>
+                    <div style="display: flex; gap: 6px;">
+                        <button id="btn-task-prev" class="btn-secondary btn-sm"
+                            onclick="changeTaskPage(-1)">Sebelumnya</button>
+                        <button id="btn-task-next" class="btn-secondary btn-sm"
+                            onclick="changeTaskPage(1)">Berikutnya</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -97,6 +433,40 @@
         const token = localStorage.getItem("token");
         const role = localStorage.getItem("role");
         let currentAdminId = null;
+
+        let allUsersData = [];
+        let allTasksData = [];
+        let selectedUserId = null;
+        let pendingDeleteTaskId = null;
+        let taskPage = 1;
+        const pageSize = 7;
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById("toast-box");
+            toast.innerText = msg;
+            toast.className = "toast-notice show" + (isError ? " error" : "");
+            setTimeout(() => { toast.className = "toast-notice"; }, 3200);
+        }
+
+        function openDeleteModal(id, title) {
+            pendingDeleteTaskId = id;
+            document.getElementById("delete-modal-desc").innerHTML =
+                `Anda yakin ingin menghapus tugas <strong>"${title}"</strong>? Data tugas akan dihapus secara permanen.`;
+            document.getElementById("delete-modal").classList.add("show");
+        }
+
+        function closeDeleteModal() {
+            pendingDeleteTaskId = null;
+            document.getElementById("delete-modal").classList.remove("show");
+        }
+
+        function openLogoutModal() {
+            document.getElementById("logout-modal").classList.add("show");
+        }
+
+        function closeLogoutModal() {
+            document.getElementById("logout-modal").classList.remove("show");
+        }
 
         function show403() {
             document.getElementById("admin-content").style.display = "none";
@@ -138,10 +508,10 @@
                 currentAdminId = user.id;
                 document.getElementById("admin-content").style.display = "block";
                 document.getElementById("admin-name").innerText = user.name || localStorage.getItem("userName") || "Admin";
-                loadUsers();
-                loadAllTasks();
+                await Promise.all([loadUsers(), loadAllTasks()]);
+                renderUsersList();
             } catch (err) {
-                alert("Gagal terhubung ke server backend.");
+                showToast("Gagal terhubung ke server backend.", true);
             }
         }
 
@@ -151,39 +521,85 @@
             if (res.status === 403) return show403();
 
             const json = await res.json();
-            const users = json.data || [];
-            document.getElementById("glob-users").innerText = users.length;
+            allUsersData = json.data || [];
+            document.getElementById("glob-users").innerText = allUsersData.length;
+            renderUsersList();
+        }
 
-            const tbody = document.getElementById("users-table-body");
-            tbody.innerHTML = "";
+        function selectUserFilter(userId) {
+            selectedUserId = userId;
+            taskPage = 1;
 
-            if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 24px;">Belum ada pengguna.</td></tr>';
+            const titleEl = document.getElementById("tasks-panel-title");
+            const subEl = document.getElementById("tasks-panel-subtitle");
+
+            if (userId === null) {
+                titleEl.innerText = "Semua Tugas Pengguna";
+                subEl.innerText = "Menampilkan tugas seluruh pengguna";
+            } else {
+                const u = allUsersData.find(item => item.id === userId);
+                titleEl.innerText = `Tugas Milik ${u ? u.name : "User #" + userId}`;
+                subEl.innerText = u ? u.email : "";
+            }
+
+            renderUsersList();
+            renderTasksTable();
+        }
+
+        function renderUsersList() {
+            const q = document.getElementById("search-user").value.trim().toLowerCase();
+            const filtered = allUsersData.filter(u =>
+                (u.name || "").toLowerCase().includes(q) || (u.email || "").toLowerCase().includes(q)
+            );
+
+            document.getElementById("user-card-all").classList.toggle("selected", selectedUserId === null);
+
+            const container = document.getElementById("users-list-container");
+            container.innerHTML = "";
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #6B5C4E; font-size: 13px; padding: 16px;">Pengguna tidak ditemukan.</p>';
                 return;
             }
 
-            users.forEach(u => {
+            filtered.forEach(u => {
                 const isSelf = u.id === currentAdminId;
-                tbody.innerHTML += `
-          <tr>
-            <td style="color: #64748b;">#${u.id}</td>
-            <td style="font-weight: 500;">${u.name} ${isSelf ? '<span style="font-size: 11px; color: #64748b;">(Anda)</span>' : ''}</td>
-            <td style="color: #64748b;">${u.email}</td>
-            <td><span class="badge ${u.role === "ADMIN" ? "badge-MEDIUM" : "badge-TODO"}">${u.role}</span></td>
-            <td>${u.is_active ? '<span class="badge badge-DONE">Aktif</span>' : '<span class="badge badge-HIGH">Nonaktif</span>'}</td>
-            <td>
-              <select onchange="changeRole(${u.id}, this.value)" ${isSelf ? 'disabled title="Tidak dapat mengubah role sendiri"' : ''} style="padding: 5px 10px; font-size: 12.5px; width: auto; min-width: 105px;">
-                <option value="USER" ${u.role === "USER" ? "selected" : ""}>USER</option>
-                <option value="ADMIN" ${u.role === "ADMIN" ? "selected" : ""}>ADMIN</option>
-              </select>
-            </td>
-            <td>
-              <select onchange="toggleStatus(${u.id}, this.value === 'true')" ${isSelf ? 'disabled title="Tidak dapat menonaktifkan akun sendiri"' : ''} style="padding: 5px 10px; font-size: 12.5px; width: auto; min-width: 115px;">
-                <option value="true" ${u.is_active ? "selected" : ""}>Aktif</option>
-                <option value="false" ${!u.is_active ? "selected" : ""}>Nonaktif</option>
-              </select>
-            </td>
-          </tr>`;
+                const isAdminRole = u.role === "ADMIN";
+                const isSelected = selectedUserId === u.id;
+                const userTaskCount = allTasksData.filter(t => t.user_id === u.id).length;
+
+                container.innerHTML += `
+                    <div class="user-item ${isSelected ? 'selected' : ''}"
+                         ${isAdminRole ? 'style="cursor: default;"' : `onclick="selectUserFilter(${u.id})"`}>
+                        <div class="user-item-top">
+                            <div>
+                                <div style="font-weight: 600; font-size: 13.5px; color: #2D2520;">
+                                    ${u.name} ${isSelf ? '<span style="font-size: 11px; font-weight: 400; color: #6B5C4E;">(Anda)</span>' : ''}
+                                </div>
+                                <div style="font-size: 12px; color: #6B5C4E;">${u.email}</div>
+                            </div>
+                            ${!isAdminRole ? `
+                                <span style="font-size: 11.5px; color: #2C5266; background: #DCEAF1; padding: 2px 8px; border-radius: 99px; white-space: nowrap;">
+                                    ${userTaskCount} tugas
+                                </span>
+                            ` : ''}
+                        </div>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <span class="badge ${isAdminRole ? "badge-MEDIUM" : "badge-TODO"}">${u.role}</span>
+                            ${u.is_active ? '<span class="badge badge-DONE">Aktif</span>' : '<span class="badge badge-HIGH">Nonaktif</span>'}
+                        </div>
+                        <div class="user-controls" onclick="event.stopPropagation()">
+                            <select onchange="changeRole(${u.id}, this.value)" ${isSelf ? 'disabled title="Tidak dapat mengubah role sendiri"' : ''}>
+                                <option value="USER" ${u.role === "USER" ? "selected" : ""}>Role: USER</option>
+                                <option value="ADMIN" ${u.role === "ADMIN" ? "selected" : ""}>Role: ADMIN</option>
+                            </select>
+                            <select onchange="toggleStatus(${u.id}, this.value === 'true')" ${isSelf ? 'disabled title="Tidak dapat menonaktifkan akun sendiri"' : ''}>
+                                <option value="true" ${u.is_active ? "selected" : ""}>Status: Aktif</option>
+                                <option value="false" ${!u.is_active ? "selected" : ""}>Status: Nonaktif</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
             });
         }
 
@@ -193,7 +609,8 @@
             });
             if (res.status === 403) return show403();
             const json = await res.json();
-            if (!res.ok) alert(json.message || "Gagal mengubah role.");
+            if (!res.ok) showToast(json.message || "Gagal mengubah role.", true);
+            else showToast("Role pengguna berhasil diperbarui.");
             loadUsers();
         }
 
@@ -203,7 +620,8 @@
             });
             if (res.status === 403) return show403();
             const json = await res.json();
-            if (!res.ok) alert(json.message || "Gagal mengubah status akun.");
+            if (!res.ok) showToast(json.message || "Gagal mengubah status akun.", true);
+            else showToast("Status akun berhasil diperbarui.");
             loadUsers();
         }
 
@@ -213,33 +631,63 @@
             if (res.status === 403) return show403();
 
             const json = await res.json();
-            const tasks = Array.isArray(json.data) ? json.data : (json.data?.items || []);
+            allTasksData = Array.isArray(json.data) ? json.data : (json.data?.items || []);
 
-            // Hitung statistik global dari seluruh tugas
-            document.getElementById("glob-tasks").innerText = tasks.length;
-            document.getElementById("glob-progress").innerText = tasks.filter(t => t.status === "IN_PROGRESS").length;
-            document.getElementById("glob-done").innerText = tasks.filter(t => t.status === "DONE").length;
+            document.getElementById("glob-tasks").innerText = allTasksData.length;
+            document.getElementById("all-tasks-pill").innerText = `${allTasksData.length} tugas`;
+            document.getElementById("glob-progress").innerText = allTasksData.filter(t => t.status === "IN_PROGRESS").length;
+            document.getElementById("glob-done").innerText = allTasksData.filter(t => t.status === "DONE").length;
+
+            renderUsersList();
+            renderTasksTable();
+        }
+
+        function changeTaskPage(delta) {
+            taskPage += delta;
+            renderTasksTable();
+        }
+
+        function renderTasksTable() {
+            const q = document.getElementById("search-admin-task").value.trim().toLowerCase();
+            const statusFilter = document.getElementById("filter-admin-status").value;
+
+            const filtered = allTasksData.filter(t => {
+                const matchUser = selectedUserId === null || t.user_id === selectedUserId;
+                const matchText = (t.title || "").toLowerCase().includes(q) || (t.user_name || "").toLowerCase().includes(q);
+                const matchStatus = !statusFilter || t.status === statusFilter;
+                return matchUser && matchText && matchStatus;
+            });
+
+            const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+            if (taskPage > totalPages) taskPage = totalPages;
+            const start = (taskPage - 1) * pageSize;
+            const slice = filtered.slice(start, start + pageSize);
+
+            document.getElementById("task-page-info").innerText = `Halaman ${taskPage} dari ${totalPages}`;
+            document.getElementById("btn-task-prev").disabled = taskPage <= 1;
+            document.getElementById("btn-task-next").disabled = taskPage >= totalPages;
 
             const tbody = document.getElementById("admin-tasks-body");
             tbody.innerHTML = "";
 
-            if (tasks.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #64748b; padding: 24px;">Belum ada tugas dari pengguna mana pun.</td></tr>';
+            if (slice.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #6B5C4E; padding: 28px;">Belum ada tugas untuk filter ini.</td></tr>';
                 return;
             }
 
-            tasks.forEach(t => {
+            slice.forEach(t => {
+                const safeTitle = (t.title || "").replace(/'/g, "\\'").replace(/"/g, "&quot;");
                 tbody.innerHTML += `
           <tr>
-            <td style="color: #64748b;">#${t.id}</td>
+            <td style="color: #6B5C4E;">#${t.id}</td>
             <td>${t.user_name || "User #" + t.user_id}</td>
             <td style="font-weight: 500;">${t.title}</td>
             <td>${t.category_name || "-"}</td>
             <td><span class="badge badge-${t.priority}">${t.priority}</span></td>
             <td><span class="badge badge-${t.status}">${t.status}</span></td>
-            <td style="white-space: nowrap; color: #64748b;">${(t.due_date || "").slice(0, 10)}</td>
+            <td style="white-space: nowrap; color: #6B5C4E;">${(t.due_date || "").slice(0, 10)}</td>
             <td style="white-space: nowrap;">
-              <button class="btn-danger btn-sm" onclick="deleteAdminTask(${t.id})" title="Hapus Tugas" style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 8px;">
+              <button class="btn-danger btn-sm" onclick="openDeleteModal(${t.id}, '${safeTitle}')" title="Hapus Tugas" style="display: inline-flex; align-items: center; justify-content: center; padding: 6px 8px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="3 6 5 6 21 6"></polyline>
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -252,27 +700,39 @@
             });
         }
 
-        async function deleteAdminTask(id) {
-            if (!confirm("Anda yakin ingin menghapus tugas ini?")) return;
+        async function confirmDeleteTask() {
+            if (!pendingDeleteTaskId) return;
+            const id = pendingDeleteTaskId;
+            const btn = document.getElementById("btn-confirm-delete");
+            btn.disabled = true;
+            btn.innerText = "Menghapus...";
 
-            let res = await fetch(`${API_URL}/admin/tasks/${id}`, {
-                method: "DELETE", headers: authHeaders()
-            });
-
-            if (res.status === 404) {
-                res = await fetch(`${API_URL}/tasks/${id}`, {
+            try {
+                let res = await fetch(`${API_URL}/admin/tasks/${id}`, {
                     method: "DELETE", headers: authHeaders()
                 });
-            }
 
-            if (res.status === 401) return logout();
-            if (res.status === 403) return show403();
+                if (res.status === 404) {
+                    res = await fetch(`${API_URL}/tasks/${id}`, {
+                        method: "DELETE", headers: authHeaders()
+                    });
+                }
 
-            if (res.ok) {
-                loadAllTasks();
-            } else {
-                const json = await res.json().catch(() => ({}));
-                alert(json.message || "Gagal menghapus tugas. Pastikan endpoint DELETE /admin/tasks/:id tersedia di backend.");
+                closeDeleteModal();
+
+                if (res.status === 401) return logout();
+                if (res.status === 403) return show403();
+
+                if (res.ok) {
+                    showToast("Tugas berhasil dihapus.");
+                    loadAllTasks();
+                } else {
+                    const json = await res.json().catch(() => ({}));
+                    showToast(json.message || "Gagal menghapus tugas.", true);
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Ya, Hapus";
             }
         }
 
